@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(curl:*)",
+      "Bash(grep -oP '\\(fetch|ajax|url|endpoint\\)[^;]{0,200}statistic[^;]{0,100}')",
+      "WebSearch",
+      "WebFetch(domain:nasdaqbaltic.com)",
+      "mcp__ide__getDiagnostics",
+      "Bash(find:*)",
+      "WebFetch(domain:query1.finance.yahoo.com)",
+      "WebFetch(domain:query2.finance.yahoo.com)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Bash(grep -r \"from ''''@/components\\\\|from ''''./\\\\|from ''''../\" --include=\"*.tsx\" --include=\"*.ts\" -h)",
+      "Bash(mv components/Dashboard.tsx components/layout/Dashboard.tsx)",
+      "Bash(mv components/LeftSidebar.tsx components/layout/NavSidebar.tsx)",
+      "Bash(mv components/MainPanel.tsx components/layout/MainPanel.tsx)",
+      "Bash(mv components/RightSidebar.tsx components/layout/DividendCalendar.tsx)",
+      "Bash(mv components/ThePulse.tsx components/portfolio/PortfolioHeader.tsx)",
+      "Bash(mv components/layout/* components/)",
+      "Bash(mv components/portfolio/* components/)",
+      "Bash(mv components/auth/* components/)",
+      "Bash(mv components/modals/* components/)",
+      "Bash(rmdir components/layout components/portfolio components/auth components/modals)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

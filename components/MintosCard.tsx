@@ -222,6 +222,15 @@ function MintosAccountModal({
 
 // ─── Sync Modal ────────────────────────────────────────────────────────────────
 
+const COOKIE_STEPS = [
+  'Go to mintos.com and log in normally in your browser',
+  'Press F12 → click the Network tab → refresh the page (F5)',
+  'Click any request to www.mintos.com in the list',
+  'Open the Headers panel → scroll to Request Headers',
+  'Find the "cookie:" row → copy its entire value',
+  'Paste it below and click Sync',
+];
+
 function MintosSyncModal({
   account,
   onClose,
@@ -231,9 +240,8 @@ function MintosSyncModal({
   onClose: () => void;
   onSynced: (data: Partial<Omit<MintosAccount, 'id' | 'addedAt'>>) => void;
 }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
+  const [cookie, setCookie] = useState('');
+  const [revealed, setRevealed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -247,18 +255,20 @@ function MintosSyncModal({
       const res = await fetch('/api/mintos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ sessionCookie: cookie.trim() }),
       });
-      const data = await res.json() as { error?: string } & Partial<MintosAccount>;
+      const data = await res.json() as { error?: string; _rawKeys?: string[] } & Partial<MintosAccount>;
 
       if (!res.ok || data.error) {
         setError(data.error ?? 'Sync failed.');
         return;
       }
 
+      const { _rawKeys: _drop, ...accountData } = data;
+      void _drop;
       setSuccess(true);
-      onSynced({ ...data, lastSynced: new Date().toISOString() });
-      setTimeout(onClose, 1500);
+      onSynced({ ...accountData, lastSynced: new Date().toISOString() });
+      setTimeout(onClose, 1800);
     } catch {
       setError('Network error. Check your connection.');
     } finally {
@@ -268,13 +278,15 @@ function MintosSyncModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-sm bg-surface-card border border-surface-border rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+      <div className="w-full max-w-lg bg-surface-card border border-surface-border rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <MintosIcon size={26} />
             <div>
               <MintosLogo size={14} />
-              <p className="text-[10px] text-slate-500 mt-0.5">{account.nickname}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Session sync · {account.nickname}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-200 transition-colors">
@@ -282,58 +294,77 @@ function MintosSyncModal({
           </button>
         </div>
 
-        {/* How sync works */}
-        <div className="px-5 pt-4 pb-1">
-          <div className="rounded-xl p-3 mb-3 border" style={{ background: 'rgba(0,177,79,0.06)', borderColor: 'rgba(0,177,79,0.2)' }}>
-            <p className="text-[11px] text-slate-400 font-medium mb-1.5 flex items-center gap-1.5">
-              <Zap size={11} className="text-[#00B14F]" /> How auto-sync works
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+
+          {/* Why */}
+          <div className="rounded-xl p-3 border" style={{ background: 'rgba(0,177,79,0.05)', borderColor: 'rgba(0,177,79,0.18)' }}>
+            <p className="text-[11px] font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+              <Zap size={11} className="text-[#00B14F]" /> Why a session cookie instead of password?
             </p>
-            <ol className="text-[10px] text-slate-500 space-y-1 list-decimal list-inside">
-              <li>Server fetches the Mintos login page to collect cookies</li>
-              <li>POSTs your credentials to Mintos&apos;s internal API</li>
-              <li>Fetches your account overview with the session token</li>
-              <li>Updates your portfolio — credentials are never stored</li>
-            </ol>
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              Mintos blocks automated logins with reCAPTCHA. Instead, you log in normally in your
+              browser (CAPTCHA already solved), then share the session token Mintos gave you.
+              The cookie is forwarded only to Mintos&apos;s own API and is{' '}
+              <span className="text-slate-400 font-medium">never stored anywhere</span>.
+            </p>
           </div>
-          <div className="flex items-start gap-2 p-2.5 rounded-xl mb-1" style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }}>
-            <AlertCircle size={12} className="text-amber-400 mt-0.5 flex-shrink-0" />
-            <p className="text-[10px] text-amber-300 leading-relaxed">
-              Mintos uses reCAPTCHA — auto-sync may be blocked. Use manual entry below as the reliable fallback.
+
+          {/* Steps */}
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">
+              How to get your cookie
+            </p>
+            <div className="space-y-2">
+              {COOKIE_STEPS.map((text, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold"
+                    style={{ background: 'rgba(0,177,79,0.12)', color: '#00B14F', border: '1px solid rgba(0,177,79,0.25)' }}
+                  >
+                    {i + 1}
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Example */}
+          <div className="rounded-xl p-3 border border-surface-border bg-surface">
+            <p className="text-[10px] text-slate-600 mb-1 font-medium">The value looks like:</p>
+            <p className="text-[10px] text-slate-500 font-mono break-all leading-relaxed">
+              _ga=GA1.2.xxx; lang=en; cf_clearance=AbC123...; session=eyJhbGciOi...
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSync} className="px-5 pb-5 space-y-3">
+        {/* Form — pinned bottom */}
+        <form onSubmit={handleSync} className="px-5 pb-5 pt-3 border-t border-surface-border flex-shrink-0 space-y-3">
           <div>
-            <label className="block text-[11px] text-slate-500 mb-1">Mintos email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="you@example.com"
-              className="w-full bg-surface border border-surface-border rounded-xl px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#00B14F]/50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] text-slate-500 mb-1">Password</label>
+            <label className="block text-[11px] text-slate-500 mb-1">
+              Paste your cookie header value
+            </label>
             <div className="relative">
-              <input
-                type={showPass ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+              <textarea
+                value={cookie}
+                onChange={(e) => setCookie(e.target.value)}
+                onFocus={() => setRevealed(true)}
                 required
-                placeholder="••••••••"
-                className="w-full bg-surface border border-surface-border rounded-xl px-3 py-2 pr-9 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#00B14F]/50"
+                rows={3}
+                placeholder="_ga=GA1.2...; session=eyJ..."
+                className="w-full bg-surface border border-surface-border rounded-xl px-3 py-2 text-xs text-slate-300 placeholder-slate-700 focus:outline-none focus:border-[#00B14F]/50 font-mono resize-none"
+                style={{ filter: revealed ? 'none' : 'blur(3px)', transition: 'filter 0.2s' }}
               />
-              <button
-                type="button"
-                onClick={() => setShowPass((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-              >
-                {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
-              </button>
+              {!revealed && (
+                <button
+                  type="button"
+                  onClick={() => setRevealed(true)}
+                  className="absolute inset-0 flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  <Eye size={13} /> Click to paste cookie
+                </button>
+              )}
             </div>
           </div>
 
@@ -347,26 +378,23 @@ function MintosSyncModal({
           {success && (
             <div className="flex items-center gap-2 p-2.5 rounded-xl bg-green-500/10 border border-green-500/20">
               <CheckCircle size={12} className="text-green-400" />
-              <p className="text-[11px] text-green-300">Synced successfully!</p>
+              <p className="text-[11px] text-green-300">Synced! Updating your portfolio…</p>
             </div>
           )}
 
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 rounded-xl text-sm text-slate-400 hover:text-slate-200 hover:bg-surface-hover transition-colors"
-            >
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 rounded-xl text-sm text-slate-400 hover:text-slate-200 hover:bg-surface-hover transition-colors">
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading || success}
-              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-60"
+              disabled={loading || success || !cookie.trim()}
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #00B14F, #00C957)' }}
             >
               {loading && <RefreshCw size={12} className="animate-spin" />}
-              {loading ? 'Syncing…' : 'Sync now'}
+              {loading ? 'Fetching data…' : 'Sync now'}
             </button>
           </div>
         </form>

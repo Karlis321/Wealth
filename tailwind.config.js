@@ -19,7 +19,7 @@ module.exports = {
           light: '#818cf8',
           dim: '#312e81',
         },
-        up: '#22c55e',
+        up: '#16a34a',
         down: '#ef4444',
       },
       fontFamily: {

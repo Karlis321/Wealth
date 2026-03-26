@@ -46,12 +46,12 @@ export interface EnrichedPublicAsset extends PublicAsset {
 }
 
 export interface EnrichedPrivateObligation extends PrivateObligation {
-  currentBalance: number; // principal + accrued interest
-  accruedInterest: number;
+  currentBalance: number; // principal + accrued interest earned
+  accruedInterest: number; // total interest earned since start date
   dailyInterestRate: number;
   daysElapsed: number;
-  progressPercent: number | null; // 0–100, how far through the loan term; null if no end date
-  monthlyInterestCost: number;
+  progressPercent: number | null; // 0–100, how far through the term; null if no end date
+  monthlyInterestIncome: number; // expected monthly income, structure-aware
   valueUSD: number | null;
 }
 
@@ -89,12 +89,28 @@ export interface DividendEvent {
   daysUntil: number;
 }
 
+// ─── Mintos ────────────────────────────────────────────────────────────────────
+
+export interface MintosAccount {
+  id: string;
+  nickname: string;           // user-defined label, e.g. "Main Mintos"
+  currency: string;           // account currency, typically EUR
+  totalInvested: number;      // funds currently deployed in loans
+  availableFunds: number;     // uninvested cash in the account
+  totalInterestEarned: number; // all-time interest received
+  netAnnualReturn: number;    // NAR in % (e.g. 11.5)
+  pendingPayments: number;    // payments in transit
+  lastSynced: string | null;  // ISO datetime of last successful sync
+  addedAt: string;
+}
+
 // ─── Portfolio Summary ─────────────────────────────────────────────────────────
 
 export interface PortfolioSummary {
   totalValueUSD: number;
   publicValueUSD: number;
   privateValueUSD: number;
+  mintosValueUSD: number;
   totalChange24hUSD: number;
   totalChangePercent24h: number;
   estimatedMonthlyDividend: number;
@@ -107,6 +123,7 @@ export interface PortfolioSummary {
 export interface AppStore {
   publicAssets: PublicAsset[];
   privateObligations: PrivateObligation[];
+  mintosAccounts: MintosAccount[];
   baseCurrency: string;
   tags: string[];
   lastUpdated: string | null;

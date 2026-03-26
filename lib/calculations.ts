@@ -2,9 +2,36 @@ import { differenceInDays, parseISO } from 'date-fns';
 import type { PrivateObligation, EnrichedPrivateObligation } from './types';
 
 /**
- * Calculate accrued interest using simple (not compound) interest.
- * For compound daily: balance = principal * (1 + daily_rate)^days
+ * Returns the expected monthly income from a private obligation (you are the creditor/investor).
+ * Varies by repayment structure:
+ *   bullet / balloon  — fixed coupon on original principal (principal unchanged until maturity)
+ *   amortizing        — interest on the declining outstanding balance
+ *   zero-coupon       — no periodic income (discount accrues; gain realised at maturity)
+ *   default           — compound daily: balance * ((1 + dailyRate)^30 − 1)
  */
+function calcMonthlyIncome(
+  ob: PrivateObligation,
+  currentBalance: number,
+  dailyRate: number
+): number {
+  const monthlyRate = ob.apr / 100 / 12;
+  switch (ob.bondStructure) {
+    case 'bullet':
+    case 'balloon':
+      // Coupon is on original principal regardless of time elapsed
+      return ob.principal * monthlyRate;
+    case 'zero-coupon':
+      // No cash until maturity
+      return 0;
+    case 'amortizing':
+      // Interest on the remaining (declining) balance
+      return currentBalance * monthlyRate;
+    default:
+      // Fallback: compound daily
+      return currentBalance * (Math.pow(1 + dailyRate, 30) - 1);
+  }
+}
+
 export function enrichObligation(
   ob: PrivateObligation,
   fxRates: Record<string, number>,
@@ -22,23 +49,20 @@ export function enrichObligation(
   const currentBalance = ob.principal * Math.pow(1 + dailyRate, daysElapsed);
   const accruedInterest = currentBalance - ob.principal;
 
-  // Monthly interest on current (compounded) balance: balance * ((1 + r)^30 - 1)
-  const monthlyInterestCost = currentBalance * (Math.pow(1 + dailyRate, 30) - 1);
+  const monthlyInterestIncome = calcMonthlyIncome(ob, currentBalance, dailyRate);
 
   // Progress only meaningful when there's a known end date
   const progressPercent = totalDays
     ? Math.min(100, (daysElapsed / totalDays) * 100)
     : null;
 
-  // Convert to base currency
+  // Convert to base currency (current balance is what you're owed)
   let valueUSD: number | null = null;
   if (ob.currency === baseCurrency) {
     valueUSD = currentBalance;
   } else if (fxRates[ob.currency] && fxRates[baseCurrency]) {
-    // rates are relative to USD
     const inUSD = currentBalance / fxRates[ob.currency];
-    const inBase = inUSD * fxRates[baseCurrency];
-    valueUSD = inBase;
+    valueUSD = inUSD * fxRates[baseCurrency];
   }
 
   return {
@@ -48,7 +72,7 @@ export function enrichObligation(
     dailyInterestRate: dailyRate,
     daysElapsed,
     progressPercent,
-    monthlyInterestCost,
+    monthlyInterestIncome,
     valueUSD,
   };
 }

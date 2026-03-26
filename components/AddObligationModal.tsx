@@ -204,21 +204,19 @@ export default function AddObligationModal({ onClose, initialData }: Props) {
 
           {/* Preview */}
           {principalNum > 0 && aprNum > 0 && (
-            <div className="bg-surface rounded-lg p-3 border border-surface-border text-xs">
-              <p className="text-slate-500 mb-1 font-medium">Interest Preview</p>
+            <div className="rounded-xl p-3 text-xs" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)' }}>
+              <p className="text-slate-500 mb-2 font-medium">Income Preview</p>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-slate-600">Monthly interest</p>
-                  <p className="text-orange-400 font-mono">
-                    {currency}{' '}
-                    {previewMonthly.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  <p className="text-slate-600 mb-0.5">Monthly income</p>
+                  <p className="text-up font-mono font-semibold">
+                    +{currency} {previewMonthly.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-600">Annual interest</p>
-                  <p className="text-red-400 font-mono">
-                    {currency}{' '}
-                    {previewAnnual.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  <p className="text-slate-600 mb-0.5">Annual income</p>
+                  <p className="text-up font-mono font-semibold">
+                    +{currency} {previewAnnual.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
               </div>

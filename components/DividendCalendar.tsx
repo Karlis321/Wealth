@@ -64,11 +64,15 @@ function DividendCard({
 
   return (
     <div
-      className={`rounded-lg p-2.5 border transition-colors ${
-        isVeryClose
-          ? 'border-amber-400/30 bg-amber-400/5'
-          : 'border-surface-border bg-surface'
-      }`}
+      className="rounded-xl p-2.5 border transition-all duration-200"
+      style={isVeryClose ? {
+        borderColor: 'rgba(251,191,36,0.25)',
+        background: 'rgba(251,191,36,0.04)',
+        boxShadow: '0 0 16px rgba(251,191,36,0.06)',
+      } : {
+        borderColor: 'rgba(255,255,255,0.05)',
+        background: 'rgba(10,10,20,0.6)',
+      }}
     >
       <div className="flex justify-between items-start">
         <div>

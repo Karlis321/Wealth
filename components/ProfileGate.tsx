@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { TrendingUp, User, ArrowLeft, Eye, EyeOff, Loader, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, User, ArrowLeft, Eye, EyeOff, Loader } from 'lucide-react';
 import {
-  fetchProfiles,
+  checkProfileExists,
   createProfile,
   verifyPassword,
   setActiveProfile,
-  deleteProfile,
-  type Profile,
 } from '@/lib/profiles';
 
 interface Props {
@@ -18,8 +16,6 @@ interface Props {
 type Step = 'name' | 'password';
 
 export default function ProfileGate({ onProfile }: Props) {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [step, setStep] = useState<Step>('name');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -29,30 +25,21 @@ export default function ProfileGate({ onProfile }: Props) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchProfiles().then((p) => {
-      setProfiles(p);
-      setLoadingProfiles(false);
-    });
-  }, []);
-
-  function handleNameSubmit(e: React.FormEvent) {
+  async function handleNameSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) { setError('Enter your name.'); return; }
     setError('');
-    const existing = profiles.find((p) => p.name === trimmed);
-    setIsExisting(!!existing);
-    setStep('password');
-  }
-
-  function selectProfile(profileName: string) {
-    setName(profileName);
-    setIsExisting(true);
-    setError('');
-    setPassword('');
-    setConfirmPassword('');
-    setStep('password');
+    setLoading(true);
+    try {
+      const exists = await checkProfileExists(trimmed);
+      setIsExisting(exists);
+      setStep('password');
+    } catch {
+      setError('Connection error. Check your internet.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -71,13 +58,13 @@ export default function ProfileGate({ onProfile }: Props) {
     setLoading(true);
     try {
       if (isExisting) {
-        const key = await verifyPassword(name, password);
+        const key = await verifyPassword(name.trim(), password);
         if (!key) { setError('Incorrect password.'); setLoading(false); return; }
-        setActiveProfile(name);
-        onProfile(name, key);
+        setActiveProfile(name.trim());
+        onProfile(name.trim(), key);
       } else {
-        const { key } = await createProfile(name, password);
-        onProfile(name, key);
+        const { key } = await createProfile(name.trim(), password);
+        onProfile(name.trim(), key);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -86,95 +73,53 @@ export default function ProfileGate({ onProfile }: Props) {
     }
   }
 
-  async function handleDeleteProfile(e: React.MouseEvent, profileName: string) {
-    e.stopPropagation();
-    if (!confirm(`Delete profile "${profileName}"? All data will be lost.`)) return;
-    await deleteProfile(profileName);
-    setProfiles((prev) => prev.filter((p) => p.name !== profileName));
-  }
-
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: '#07070f' }}>
+      {/* Ambient glow */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 60%)' }} />
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 60% at 80% 100%, rgba(139,92,246,0.05) 0%, transparent 55%)' }} />
+
+      <div className="w-full max-w-sm relative animate-fade-in">
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center">
-            <TrendingUp size={18} className="text-white" />
+        <div className="flex flex-col items-center gap-3 mb-8">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)', boxShadow: '0 8px 28px rgba(99,102,241,0.5)' }}>
+            <TrendingUp size={22} className="text-white" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-white leading-tight">Wealth</p>
-            <p className="text-sm font-bold text-accent-light leading-tight">Command Center</p>
+          <div className="text-center">
+            <p className="text-base font-bold text-white leading-tight">Wealth</p>
+            <p className="text-base font-bold leading-tight text-gradient">Command Center</p>
           </div>
         </div>
 
-        <div className="bg-surface-card border border-surface-border rounded-2xl p-6">
+        <div className="p-6 rounded-2xl" style={{
+          background: 'linear-gradient(160deg, rgba(15,15,28,0.99) 0%, rgba(10,10,18,0.99) 100%)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.06) inset',
+        }}>
           {step === 'name' ? (
-            <div className="space-y-5">
-              {/* Existing profiles */}
-              {loadingProfiles ? (
-                <div className="flex items-center justify-center py-4 gap-2 text-slate-500 text-xs">
-                  <Loader size={13} className="animate-spin" />
-                  Loading profiles…
-                </div>
-              ) : profiles.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Select profile
-                  </p>
-                  {profiles.map((p) => (
-                    <button
-                      key={p.name}
-                      onClick={() => selectProfile(p.name)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border hover:border-accent/40 transition-all group"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0">
-                        <User size={13} className="text-accent-light" />
-                      </div>
-                      <span className="flex-1 text-sm text-slate-200 text-left">{p.name}</span>
-                      <button
-                        onClick={(e) => handleDeleteProfile(e, p.name)}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-all"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </button>
-                  ))}
-                  <div className="flex items-center gap-3 pt-1">
-                    <div className="flex-1 h-px bg-surface-border" />
-                    <span className="text-xs text-slate-600">or create new</span>
-                    <div className="flex-1 h-px bg-surface-border" />
-                  </div>
-                </div>
-              )}
-
-              {/* Name input */}
-              <form onSubmit={handleNameSubmit} className="space-y-3">
-                {!loadingProfiles && profiles.length === 0 && (
-                  <p className="text-xs text-slate-500">Create your profile to get started.</p>
-                )}
-                <div>
-                  <label className="text-xs text-slate-500 mb-1.5 block">Name</label>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={name}
-                    onChange={(e) => { setName(e.target.value); setError(''); }}
-                    placeholder="Your name…"
-                    className="w-full bg-surface border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
-                  />
-                  {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-white text-sm font-medium transition-colors"
-                >
-                  Continue
-                </button>
-              </form>
-            </div>
+            <form onSubmit={handleNameSubmit} className="space-y-4">
+              <p className="text-xs text-slate-500">Enter your name to continue.</p>
+              <div>
+                <label className="text-xs text-slate-500 mb-1.5 block">Name</label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setError(''); }}
+                  placeholder="Your name…"
+                  className="input"
+                />
+                {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+                {loading && <Loader size={13} className="animate-spin" />}
+                Continue
+              </button>
+            </form>
           ) : (
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              {/* Back + title */}
+              {/* Back + profile name */}
               <div className="flex items-center gap-2 mb-1">
                 <button
                   type="button"
@@ -190,7 +135,7 @@ export default function ProfileGate({ onProfile }: Props) {
                   <span className="text-sm font-semibold text-slate-200">{name}</span>
                 </div>
                 <span className="text-xs text-slate-600 ml-auto">
-                  {isExisting ? 'Login' : 'New profile'}
+                  {isExisting ? 'Welcome back' : 'New profile'}
                 </span>
               </div>
 
@@ -204,7 +149,7 @@ export default function ProfileGate({ onProfile }: Props) {
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(''); }}
                     placeholder="Enter password…"
-                    className="w-full bg-surface border border-surface-border rounded-xl px-3.5 py-2.5 pr-10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+                    className="input pr-10"
                   />
                   <button
                     type="button"
@@ -225,7 +170,7 @@ export default function ProfileGate({ onProfile }: Props) {
                     value={confirmPassword}
                     onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                     placeholder="Repeat password…"
-                    className="w-full bg-surface border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+                    className="input"
                   />
                 </div>
               )}

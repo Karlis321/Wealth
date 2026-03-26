@@ -1,7 +1,7 @@
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { AppStore, PublicAsset, PrivateObligation } from './types';
+import type { AppStore, PublicAsset, PrivateObligation, MintosAccount } from './types';
 import { encryptString, decryptString } from './crypto';
 import { supabase } from './supabase';
 
@@ -15,6 +15,7 @@ function cacheKey(profileName: string): string {
 export const DEFAULT_STORE: AppStore = {
   publicAssets: [],
   privateObligations: [],
+  mintosAccounts: [],
   baseCurrency: 'EUR',
   tags: ['#LongTerm', '#ShortTerm', '#Risky', '#Stable', '#Growth', '#Income'],
   lastUpdated: null,
@@ -155,6 +156,40 @@ export function deletePrivateObligation(store: AppStore, id: string): AppStore {
   return {
     ...store,
     privateObligations: store.privateObligations.filter((o) => o.id !== id),
+  };
+}
+
+// ─── Mintos Accounts CRUD ──────────────────────────────────────────────────────
+
+export function addMintosAccount(
+  store: AppStore,
+  data: Omit<MintosAccount, 'id' | 'addedAt'>
+): AppStore {
+  const account: MintosAccount = {
+    ...data,
+    id: uuidv4(),
+    addedAt: new Date().toISOString(),
+  };
+  return { ...store, mintosAccounts: [...(store.mintosAccounts ?? []), account] };
+}
+
+export function updateMintosAccount(
+  store: AppStore,
+  id: string,
+  data: Partial<Omit<MintosAccount, 'id' | 'addedAt'>>
+): AppStore {
+  return {
+    ...store,
+    mintosAccounts: (store.mintosAccounts ?? []).map((a) =>
+      a.id === id ? { ...a, ...data } : a
+    ),
+  };
+}
+
+export function deleteMintosAccount(store: AppStore, id: string): AppStore {
+  return {
+    ...store,
+    mintosAccounts: (store.mintosAccounts ?? []).filter((a) => a.id !== id),
   };
 }
 

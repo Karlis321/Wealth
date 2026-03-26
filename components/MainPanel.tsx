@@ -3,6 +3,7 @@
 import PortfolioHeader from './PortfolioHeader';
 import AssetTable from './AssetTable';
 import ObligationList from './ObligationList';
+import MintosCard from './MintosCard';
 
 export default function MainPanel() {
   return (
@@ -14,6 +15,7 @@ export default function MainPanel() {
       <div id="main-scroll" className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
         <div id="section-assets"><AssetTable /></div>
         <div id="section-obligations"><ObligationList /></div>
+        <div id="section-mintos"><MintosCard /></div>
       </div>
     </main>
   );

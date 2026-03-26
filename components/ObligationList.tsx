@@ -102,7 +102,7 @@ function ObligationCard({
   const vsBenchmark = ob.apr - RISK_FREE_RATE;
 
   return (
-    <div className="bg-surface rounded-xl p-3 border border-surface-border group">
+    <div className="bg-surface rounded-2xl p-3.5 border group card-accent-top transition-all duration-200 hover:border-surface-highlight" style={{ borderColor: 'rgba(255,255,255,0.05)', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
       {/* Top row */}
       <div className="flex items-start justify-between mb-2">
         <div>
@@ -200,7 +200,7 @@ function ObligationCard({
         <span className="text-[10px] text-slate-600">
           Monthly interest income:{' '}
           <span className="text-up font-mono">
-            +{formatCurrency(ob.monthlyInterestCost, ob.currency)}
+            +{formatCurrency(ob.monthlyInterestIncome, ob.currency)}
           </span>
         </span>
         <div className="flex gap-1">

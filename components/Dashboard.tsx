@@ -54,22 +54,23 @@ export default function Dashboard() {
       {/* ── Mobile: stacked layout with bottom navigation ── */}
       <div className="flex md:hidden flex-col bg-surface overflow-hidden" style={{ height: '100dvh' }}>
         {/* Top bar */}
-        <header className="flex-shrink-0 flex items-center justify-between px-4 h-14 border-b border-surface-border bg-surface-card">
+        <header className="flex-shrink-0 flex items-center justify-between px-4 h-14 border-b border-surface-border bg-surface-card/80 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
-              <TrendingUp size={14} className="text-white" />
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#818cf8)', boxShadow: '0 4px 10px rgba(99,102,241,0.4)' }}>
+              <TrendingUp size={13} className="text-white" />
             </div>
             <div className="leading-tight">
               <p className="text-[11px] font-bold text-white">Wealth</p>
-              <p className="text-[11px] font-bold text-accent-light">Command Center</p>
+              <p className="text-[11px] font-bold text-gradient">Command Center</p>
             </div>
           </div>
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-surface-hover transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-surface-hover transition-colors"
             aria-label="Open menu"
           >
-            <Menu size={20} />
+            <Menu size={18} />
           </button>
         </header>
 
@@ -80,23 +81,23 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom navigation */}
-        <nav className="flex-shrink-0 flex border-t border-surface-border bg-surface-card">
+        <nav className="flex-shrink-0 flex border-t border-surface-border bg-surface-card/90 backdrop-blur-md">
           <button
             onClick={() => setMobileTab('portfolio')}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              mobileTab === 'portfolio' ? 'text-accent-light' : 'text-slate-500'
+            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-all duration-200 relative ${
+              mobileTab === 'portfolio' ? 'text-accent-light mobile-tab-active' : 'text-slate-500'
             }`}
           >
-            <LayoutDashboard size={18} />
+            <LayoutDashboard size={17} />
             <span>Portfolio</span>
           </button>
           <button
             onClick={() => setMobileTab('calendar')}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              mobileTab === 'calendar' ? 'text-amber-400' : 'text-slate-500'
+            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-all duration-200 relative ${
+              mobileTab === 'calendar' ? 'text-amber-400 mobile-tab-active' : 'text-slate-500'
             }`}
           >
-            <Calendar size={18} />
+            <Calendar size={17} />
             <span>Dividends</span>
           </button>
         </nav>

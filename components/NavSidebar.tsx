@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   TrendingUp,
   CreditCard,
+  Building2,
   Calendar,
   Tag,
   Plus,
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', scrollTarget: 'main-scroll' },
   { icon: TrendingUp, label: 'Public Assets', scrollTarget: 'section-assets' },
   { icon: CreditCard, label: 'Obligations', scrollTarget: 'section-obligations' },
+  { icon: Building2, label: 'Mintos', scrollTarget: 'section-mintos' },
   { icon: Calendar, label: 'Dividends', scrollTarget: 'section-dividends', tab: 'calendar' as const },
 ];
 
@@ -65,31 +67,36 @@ export default function NavSidebar({ mobile, onClose, onNavigate }: NavSidebarPr
       <aside className={`${mobile ? 'w-full h-full' : 'w-56 flex-shrink-0 border-r border-surface-border'} flex flex-col bg-surface-card overflow-hidden`}>
         {/* Logo */}
         <div className="p-4 border-b border-surface-border">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
-              <TrendingUp size={14} className="text-white" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)', boxShadow: '0 4px 12px rgba(99,102,241,0.4)' }}>
+              <TrendingUp size={15} className="text-white" />
             </div>
             <div>
-              <p className="text-xs font-bold text-white leading-tight">Wealth</p>
-              <p className="text-xs font-bold text-accent-light leading-tight">Command Center</p>
+              <p className="text-xs font-bold text-white leading-tight tracking-wide">Wealth</p>
+              <p className="text-xs font-bold leading-tight" style={{ background: 'linear-gradient(90deg, #818cf8, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Command Center</p>
             </div>
           </div>
           {/* Active profile */}
-          <div className="flex items-center gap-1.5 mt-2.5 px-0.5">
-            <User size={11} className="text-slate-500 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 mt-3 px-0.5">
+            <div className="w-4 h-4 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0">
+              <User size={9} className="text-accent-light" />
+            </div>
             <span className="text-xs text-slate-400 truncate">{profileName}</span>
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="p-3 border-b border-surface-border space-y-1.5">
+        <div className="px-3 py-3 border-b border-surface-border space-y-2">
           <Stat label="Positions" value={summary.assetCount} />
           <Stat label="Obligations" value={summary.obligationCount} />
-          <Stat
-            label="Monthly Div."
-            value={formatCurrency(summary.estimatedMonthlyDividend, store.baseCurrency, true)}
-            accent
-          />
+          <div className="pt-1 mt-1 border-t border-surface-border/60">
+            <Stat
+              label="Monthly Div."
+              value={formatCurrency(summary.estimatedMonthlyDividend, store.baseCurrency, true)}
+              accent
+            />
+          </div>
         </div>
 
         {/* Navigation */}
@@ -100,15 +107,19 @@ export default function NavSidebar({ mobile, onClose, onNavigate }: NavSidebarPr
               <button
                 key={item.label}
                 onClick={() => handleNavClick(item)}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-accent/15 text-accent-light'
+                    ? 'text-accent-light'
                     : 'text-slate-500 hover:text-slate-200 hover:bg-surface-hover'
                 }`}
+                style={isActive ? {
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.06) 100%)',
+                  boxShadow: 'inset 1px 0 0 rgba(99,102,241,0.4)',
+                } : {}}
               >
-                <item.icon size={15} />
+                <item.icon size={14} />
                 <span>{item.label}</span>
-                {isActive && <ChevronRight size={12} className="ml-auto" />}
+                {isActive && <ChevronRight size={11} className="ml-auto opacity-60" />}
               </button>
             );
           })}
@@ -116,13 +127,13 @@ export default function NavSidebar({ mobile, onClose, onNavigate }: NavSidebarPr
 
         {/* Asset Tags */}
         <div className="p-3 flex-1 overflow-y-auto">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Tag size={11} className="text-slate-500" />
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <Tag size={10} className="text-slate-600" />
+            <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-[0.12em]">
               Tags
             </span>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {store.tags.map((tag) => {
               const count = tagCounts[tag] ?? 0;
               const active = activeTagFilter === tag;
@@ -130,18 +141,17 @@ export default function NavSidebar({ mobile, onClose, onNavigate }: NavSidebarPr
                 <button
                   key={tag}
                   onClick={() => setActiveTagFilter(active ? null : tag)}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 ${
                     active
-                      ? 'bg-accent/20 text-accent-light border border-accent/30'
+                      ? 'text-accent-light'
                       : 'text-slate-500 hover:text-slate-300 hover:bg-surface-hover'
                   }`}
+                  style={active ? { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' } : {}}
                 >
                   <span>{tag}</span>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      active ? 'bg-accent/30 text-accent-light' : 'bg-surface text-slate-600'
-                    }`}
-                  >
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    active ? 'bg-accent/20 text-accent-light' : 'bg-surface text-slate-600'
+                  }`}>
                     {count}
                   </span>
                 </button>
@@ -151,25 +161,25 @@ export default function NavSidebar({ mobile, onClose, onNavigate }: NavSidebarPr
         </div>
 
         {/* Bottom Actions */}
-        <div className="p-3 border-t border-surface-border space-y-2">
+        <div className="p-3 border-t border-surface-border space-y-1.5">
           {/* Refresh status */}
           <button
             onClick={refreshPrices}
             disabled={pricesLoading}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-300 hover:bg-surface-hover transition-colors"
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 hover:text-slate-300 hover:bg-surface-hover transition-colors"
           >
             {pricesLoading ? (
-              <RefreshCw size={11} className="animate-spin text-accent" />
+              <RefreshCw size={10} className="animate-spin text-accent" />
             ) : lastRefreshed ? (
-              <Wifi size={11} className="text-up" />
+              <Wifi size={10} className="text-up" />
             ) : (
-              <WifiOff size={11} />
+              <WifiOff size={10} />
             )}
             <span>
               {pricesLoading
                 ? 'Refreshing…'
                 : lastRefreshed
-                ? `${format(lastRefreshed, 'HH:mm:ss')}`
+                ? `Updated ${format(lastRefreshed, 'HH:mm:ss')}`
                 : 'No data yet'}
             </span>
           </button>
@@ -177,16 +187,17 @@ export default function NavSidebar({ mobile, onClose, onNavigate }: NavSidebarPr
           {/* Add buttons */}
           <button
             onClick={() => setShowAddAsset(true)}
-            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent-light text-xs font-medium transition-colors"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-accent-light text-xs font-semibold transition-all duration-150"
+            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.08) 100%)', border: '1px solid rgba(99,102,241,0.2)' }}
           >
-            <Plus size={13} />
+            <Plus size={12} />
             Add Public Asset
           </button>
           <button
             onClick={() => setShowAddObligation(true)}
-            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-surface-hover hover:bg-surface-border text-slate-400 text-xs font-medium transition-colors"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl bg-surface-hover hover:bg-surface-highlight text-slate-400 hover:text-slate-200 text-xs font-medium transition-all duration-150"
           >
-            <Plus size={13} />
+            <Plus size={12} />
             Add Obligation
           </button>
 
@@ -220,10 +231,8 @@ function Stat({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-xs text-slate-600">{label}</span>
-      <span
-        className={`text-xs font-mono font-medium ${accent ? 'text-up' : 'text-slate-300'}`}
-      >
+      <span className="text-[11px] text-slate-600">{label}</span>
+      <span className={`text-[11px] font-mono font-semibold tabular-nums ${accent ? 'text-up' : 'text-slate-300'}`}>
         {value}
       </span>
     </div>

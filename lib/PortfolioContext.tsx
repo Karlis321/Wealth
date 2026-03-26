@@ -12,6 +12,7 @@ import type {
   AppStore,
   PublicAsset,
   PrivateObligation,
+  MintosAccount,
   EnrichedPublicAsset,
   EnrichedPrivateObligation,
   PriceData,
@@ -29,6 +30,9 @@ import {
   addPrivateObligation,
   updatePrivateObligation,
   deletePrivateObligation,
+  addMintosAccount,
+  updateMintosAccount,
+  deleteMintosAccount,
 } from './store';
 import { enrichObligation, convertToBase } from './calculations';
 import { differenceInDays, parseISO } from 'date-fns';
@@ -58,6 +62,9 @@ interface PortfolioContextType {
   addObligation: (data: Omit<PrivateObligation, 'id' | 'addedAt'>) => void;
   editObligation: (id: string, data: Partial<Omit<PrivateObligation, 'id' | 'addedAt'>>) => void;
   removeObligation: (id: string) => void;
+  addMintos: (data: Omit<MintosAccount, 'id' | 'addedAt'>) => void;
+  editMintos: (id: string, data: Partial<Omit<MintosAccount, 'id' | 'addedAt'>>) => void;
+  removeMintos: (id: string) => void;
   refreshPrices: () => Promise<void>;
   setBaseCurrency: (currency: string) => void;
   switchProfile: () => void;
@@ -205,7 +212,16 @@ export function PortfolioProvider({
   // ─── Portfolio Summary ─────────────────────────────────────────────────────
   const publicValueUSD = enrichedAssets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
   const privateValueUSD = enrichedObligations.reduce((sum, o) => sum + (o.valueUSD ?? 0), 0);
-  const totalValueUSD = publicValueUSD + privateValueUSD;
+
+  // Mintos total = invested in loans + available cash (interest already in invested figure)
+  const mintosValueUSD = (store.mintosAccounts ?? []).reduce((sum, a) => {
+    const total = a.totalInvested + a.availableFunds;
+    if (a.currency === 'USD') return sum + total;
+    const rate = fxRates[a.currency];
+    return sum + (rate ? total / rate : total);
+  }, 0);
+
+  const totalValueUSD = publicValueUSD + privateValueUSD + mintosValueUSD;
 
   const totalChange24hUSD = enrichedAssets.reduce(
     (sum, a) =>
@@ -226,6 +242,7 @@ export function PortfolioProvider({
     totalValueUSD,
     publicValueUSD,
     privateValueUSD,
+    mintosValueUSD,
     totalChange24hUSD,
     totalChangePercent24h,
     estimatedMonthlyDividend,
@@ -283,6 +300,20 @@ export function PortfolioProvider({
     (id: string) => setStore((s) => deletePrivateObligation(s, id)),
     []
   );
+  const ctxAddMintos = useCallback(
+    (data: Omit<MintosAccount, 'id' | 'addedAt'>) =>
+      setStore((s) => addMintosAccount(s, data)),
+    []
+  );
+  const ctxEditMintos = useCallback(
+    (id: string, data: Partial<Omit<MintosAccount, 'id' | 'addedAt'>>) =>
+      setStore((s) => updateMintosAccount(s, id, data)),
+    []
+  );
+  const ctxRemoveMintos = useCallback(
+    (id: string) => setStore((s) => deleteMintosAccount(s, id)),
+    []
+  );
   const setBaseCurrency = useCallback(
     (currency: string) => setStore((s) => ({ ...s, baseCurrency: currency })),
     []
@@ -308,6 +339,9 @@ export function PortfolioProvider({
         addObligation: ctxAddObligation,
         editObligation: ctxEditObligation,
         removeObligation: ctxRemoveObligation,
+        addMintos: ctxAddMintos,
+        editMintos: ctxEditMintos,
+        removeMintos: ctxRemoveMintos,
         refreshPrices,
         setBaseCurrency,
         switchProfile,

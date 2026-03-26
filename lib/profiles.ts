@@ -52,13 +52,14 @@ export function setActiveProfile(name: string | null): void {
 
 // ─── Supabase profile ops ──────────────────────────────────────────────────────
 
-/** Fetch all profiles from Supabase (name, salt, sentinel only — no store data). */
-export async function fetchProfiles(): Promise<Profile[]> {
-  const { data, error } = await supabase
+/** Check if a profile name exists in Supabase. */
+export async function checkProfileExists(name: string): Promise<boolean> {
+  const { data } = await supabase
     .from('profiles')
-    .select('name, salt, sentinel');
-  if (error || !data) return [];
-  return data as Profile[];
+    .select('name')
+    .eq('name', name.trim())
+    .maybeSingle();
+  return !!data;
 }
 
 /**

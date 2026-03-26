@@ -224,11 +224,12 @@ function MintosAccountModal({
 
 const COOKIE_STEPS = [
   'Go to mintos.com and log in normally in your browser',
-  'Press F12 → click the Network tab → refresh the page (F5)',
+  'Open DevTools: right-click anywhere → Inspect  (or Ctrl+Shift+I / Cmd+Option+I)',
+  'Click the Network tab → tick the "Disable cache" checkbox at the top',
+  'Refresh the page (F5) — full requests will now appear with all headers',
   'Click any request to www.mintos.com in the list',
   'Open the Headers panel → scroll to Request Headers',
-  'Find the "cookie:" row → copy its entire value',
-  'Paste it below and click Sync',
+  'Find the "cookie:" row → copy its entire value → paste below',
 ];
 
 function MintosSyncModal({
